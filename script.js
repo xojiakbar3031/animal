@@ -139,6 +139,32 @@ resetBtn.addEventListener("click", function () {
   updateResults();
 });
 
+// Wikipedia'ning ochiq REST API'sidan (API kalit talab qilinmaydi) har bir
+// hayvon uchun real rasm yuklab olib, `img` maydonini to'ldiradi. Hammasini
+// bir vaqtda emas, birma-bir (kichik pauza bilan) so'raymiz — aks holda
+// Wikipedia "juda ko'p so'rov" (429) xatosini qaytarishi mumkin. Bonus: shu
+// tufayli rasmlar sahifada birma-bir "jonlanib" chiqadi.
+function wait(ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function loadAnimalImages() {
+  for (let i = 0; i < animals.length; i++) {
+    try {
+      const res = await fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(animals[i].name));
+      const data = await res.json();
+      animals[i].img = (data.thumbnail && data.thumbnail.source) || (data.originalimage && data.originalimage.source) || "";
+    } catch (e) {
+      // Internet yoki Wikipedia API ishlamasa, placeholder o'zi qolaveradi
+    }
+    updateResults();
+    await wait(120);
+  }
+}
+
 // Boshlang'ich yuklash
 fillTypeOptions();
 updateResults();
+loadAnimalImages();
